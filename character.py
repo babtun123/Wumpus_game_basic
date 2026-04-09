@@ -21,6 +21,10 @@ class Character:
         """Used to get current object position"""
         return self.position
 
+    def set_position(self, postion_val):
+        """Used to set position"""
+        self.position = postion_val
+
     def set_reset_position(self, current_game, cave_position):
         """
             Used to set the position to a specific poition

@@ -90,41 +90,104 @@ def play(wumpus_game, pit_one, pit_two, wumpus_arg, person_arg):
     # set initial postions for all characters
     set_postion_helper(wumpus_game, pit_one, pit_two, wumpus_arg, person_arg)
 
-    print("You are in room 16.")
+    game_on = True
+    while game_on:
 
-    player_input = input("Enter your move (or 'D' for directions): ")
+        # check if player and wumpus are in adjacent rooms
+        check_wumpus_adj(wumpus_game, wumpus_arg, person_arg)
+        # check if wumpus and player are currently in the same roon
+        check_wumpus_player(wumpus_game, wumpus_arg, person_arg)
+        # check if player's location is adjacent to any of the pits
+        check_pits_adj(wumpus_game, pit_one, pit_two, person_arg)
+        # check if player and any of the pits are in the same location
+        check_pits_player(pit_one, pit_two, person_arg)
 
-    if player_input.upper() == 'C':
-        cheating(pit_one, pit_two, wumpus_arg, person_arg)
-    elif player_input.upper() == 'D':
-        directions()
-    elif player_input.upper() == 'R':
-        cheating(pit_one, pit_two, wumpus_arg, person_arg)
-        reset_input = input("Enter the room locations (1..20) for player, wumpus, pit1, and pit2: ")
-        int_list = [int(x) for x in reset_input.split()]
-        reset(wumpus_game, pit_one, pit_two, wumpus_arg, person_arg, int_list)
-        cheating(pit_one, pit_two, wumpus_arg, person_arg)
-        print(wumpus_game.available_positions())
-    elif player_input.upper() == 'G':
-        guess_wumpus_input = input("Enter room (1..20) you think Wumpus is in: ")
-        if guess_wumpus_input == wumpus_arg.get_position():
-            print("You won!")
-            print("\nExiting Program ...")
+        print(f"\nYou are in room {person_arg.get_position()}.\n")
+        player_input = input("Enter your move (or 'D' for directions): ")
+
+        if player_input.upper() == 'C':
+            cheating(pit_one, pit_two, wumpus_arg, person_arg)
+        elif player_input.upper() == 'D':
+            directions()
+        elif player_input.upper() == 'R':
+            cheating(pit_one, pit_two, wumpus_arg, person_arg)
+            reset_input = input("Enter the room locations (1-20) for pit1 pit2 wumpus player: ")
+            int_list = [int(x) for x in reset_input.split()]
+            reset(wumpus_game, pit_one, pit_two, wumpus_arg, person_arg, int_list)
+            cheating(pit_one, pit_two, wumpus_arg, person_arg)
+            print(wumpus_game.available_positions())
+        elif player_input.upper() == 'G':
+            guess_wumpus_input = input("Enter room (1..20) you think Wumpus is in: ")
+            if int(guess_wumpus_input) == wumpus_arg.get_position():
+                print("You won!")
+                print("\nExiting Program ...")
+            else:
+                print("You lost!")
+                print("\nExiting Program ...")
+            game_on = False
+            # sys.exit()
+        elif player_input.upper() == 'M':
+            player_move_input = input("Enter the room number you wish to move to: ")
+            if wumpus_game.is_adj_move_valid(person_arg.get_position(), int(player_move_input)):
+                person_arg.set_position(int(player_move_input))
+            else:
+                print("You cannot move to that room. try again...")
+        elif player_input.upper() == 'X':
+            sys.exit()
         else:
-            print("You lost!")
-            print("\nExiting Program ...")
-        sys.exit()
-    elif player_input.upper() == 'M':
-        player_move_input = input("Enter the room number you wish to move to: ")
-        if wumpus_game.is_adj_move_valid(person_arg.get_position(), player_move_input):
-            print(f"You are in room {player_move_input}")
-        else:
-            print("Invalid move")
-    elif player_input.upper() == 'X':
-        sys.exit()
-    else:
-        print("Invalid move. Try again")
+            print("Invalid move. Try again")
 
+def check_wumpus_player(g, w, p):
+    """
+        This function checks if wumpus
+        and the player are in the same room
+    """
+    if w.get_position() == p.get_position():
+        if w.get_position() % 2 == 1:
+            # reset wumpus position if odd number
+            print(
+                "\nYou hear a slithering sound, as the Wumpus slips away."
+                "Whew, that was close!"
+            )
+            w.set_random_position(g)
+        else:
+            print(
+                "You briefly feel a slimy tentacled arm as your neck is snapped."
+                "It is over."
+            )
+            sys.exit()
+
+def check_wumpus_adj(g, w, p):
+    """
+        This function checks if the player
+        and wumpus are in adjacent rooms
+    """
+    wumpus_cave = g.cave[w.get_position()]
+    player_cave = g.cave[p.get_position()]
+
+    if player_cave in wumpus_cave.adjacent_rooms:
+        print("\nYou smell a stench.")
+
+def check_pits_adj(g, p1, p2, p):
+    """
+        This function checks if the player
+        and wumpus are in adjacent rooms
+    """
+    pit_one_cave = g.cave[p1.get_position()]
+    pit_two_cave = g.cave[p2.get_position()]
+    player_cave = g.cave[p.get_position()]
+
+    if player_cave in pit_one_cave.adjacent_rooms or player_cave in pit_two_cave.adjacent_rooms:
+        print("\nYou feel a draft.")
+
+def check_pits_player(p1, p2, p):
+    """check if player and pits are in the same room"""
+    if p.get_position() == p1.get_position() or p.get_position() == p2.get_position():
+        print(
+            "\nAaaaaaaaahhhhhh...."
+            "You fall into a pit and die"
+        )
+        sys.exit()
 
 def reset(g, p1, p2, w, p, list_positions):
     """Used to reset the current pos of each character"""
@@ -165,7 +228,7 @@ def reset(g, p1, p2, w, p, list_positions):
 
 def cheating(p1, p2, w, p):
     """Print this when the player cheats"""
-    print("Cheating! Game elements are in the following rooms:")
+    print("\nCheating! Game elements are in the following rooms:")
     print(
         f"Player: {p.get_position()} | "
         f"Wumpus: {w.get_position()} | "
